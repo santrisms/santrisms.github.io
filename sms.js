@@ -6,7 +6,6 @@ import { db } from './firebase.js';
 // ==========================================
 const PROVIDERS = {
     "code": { name: "SMS Code", url: "https://sms-code.santridroid.workers.dev" },
-    "otpcepat": { name: "OTP Cepat", url: "https://otp-cepat.santridroid.workers.dev" },
     "herosms": { name: "Hero", url: "https://hero.santridroid.workers.dev" } // Ganti dengan URL Worker Nixpoin Anda
 };
 
