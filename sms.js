@@ -5,8 +5,9 @@ import { db } from './firebase.js';
 // 1. KONFIGURASI PROVIDER & STATE
 // ==========================================
 const PROVIDERS = {
-    "smscode": { name: "Code", url: "https://sms.aam-zip.workers.dev" },
-    "herosms": { name: "Hero", url: "https://hero.aam-zip.workers.dev" } // Ganti dengan URL Worker Nixpoin Anda
+    "sms-code": { name: "SMS Code", url: "https://sms-code.santridroid.workers.dev" },
+    "otp-cepat": { name: "OTP Cepat", url: "https://otp-cepat.santridroid.workers.dev" },
+    "hero": { name: "Hero", url: "https://hero.santridroid.workers.dev" } // Ganti dengan URL Worker Nixpoin Anda
 };
 
 let activeProviderKey = localStorage.getItem('xurel_provider') || "smscode";
