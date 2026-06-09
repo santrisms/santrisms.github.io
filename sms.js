@@ -5,7 +5,7 @@ import { db } from './firebase.js';
 // 1. KONFIGURASI PROVIDER & STATE
 // ==========================================
 const PROVIDERS = {
-    "code": { name: "SMS Code", url: "https://sms-code.santridroid.workers.dev" },
+    "smscode": { name: "SMS Code", url: "https://sms-code.santridroid.workers.dev" },
     "herosms": { name: "Hero", url: "https://hero.santridroid.workers.dev" } // Ganti dengan URL Worker Nixpoin Anda
 };
 
