@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="YouTube Live Comment Battle Admin Panel">
+    <title>⚙️ YouTube Battle - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="background: var(--bg-primary); color: var(--text-primary); padding: var(--space-xl) var(--space-md);">
+
+    <!-- ==================== TOAST CONTAINER ==================== -->
+    <div id="toast-container"></div>
+
+    <!-- ==================== ADMIN PANEL ==================== -->
+    <section class="admin-panel" style="max-width: 900px; margin: 0 auto;">
+        <div class="admin-card">
+            <!-- Logo & Title -->
+            <div class="admin-header">
+                <div class="admin-logo">⚙️</div>
+                <h1 class="admin-title">Panel Kontrol<br><span class="gradient-text">YouTube Battle</span></h1>
+                <p class="admin-subtitle">Kendalikan pertarungan komentar dari perangkat mana saja secara real-time</p>
+            </div>
+
+            <!-- Connection & Sync Mode Configuration -->
+            <div class="form-section" style="border: 1px dashed rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.03); border-radius: var(--radius-lg); padding: 15px; margin-bottom: 20px;">
+                <h2 class="section-title" style="color: var(--accent-purple); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    🌐 Mode Koneksi & Sinkronisasi Online
+                </h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sync-mode">Mode Komunikasi</label>
+                        <select id="sync-mode" style="border-color: rgba(168, 85, 247, 0.4);">
+                            <option value="local" selected>Lokal (LocalStorage - PC yang sama)</option>
+                            <option value="firebase">Online Cloud (Firebase - Perangkat Berbeda)</option>
+                        </select>
+                        <span class="form-hint">Pilih "Online Cloud" untuk mengontrol OBS dari perangkat lain (HP/Tablet)</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="fb-session-id">ID Sesi Pertarungan (Session ID)</label>
+                        <input type="text" id="fb-session-id" placeholder="contoh: battle-1" value="default-session">
+                        <span class="form-hint">Harus sama antara halaman Admin dan Layar Battle</span>
+                    </div>
+                </div>
+
+                <div id="firebase-config-fields" class="hidden" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fb-api-key">Firebase API Key</label>
+                            <input type="password" id="fb-api-key" placeholder="AIzaSy..." value="AIzaSyAYNvoPQp6G2H5NOOKz8yqEN5dBELXTlLA">
+                        </div>
+                        <div class="form-group">
+                            <label for="fb-project-id">Firebase Project ID</label>
+                            <input type="text" id="fb-project-id" placeholder="my-youtube-battle-app" value="live-score-69d3d">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fb-database-url">Firebase Database URL</label>
+                        <input type="text" id="fb-database-url" placeholder="https://[project-id]-default-rtdb.firebaseio.com/" value="https://live-score-69d3d-default-rtdb.firebaseio.com">
+                        <span class="form-hint">Dapatkan data kredensial di Firebase Console → Project Settings → Realtime Database</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Dashboard (Active when battle is running) -->
+            <div id="live-dashboard" class="form-section hidden" style="background: rgba(22, 163, 74, 0.05); border: 1px solid rgba(22, 163, 74, 0.2); border-radius: var(--radius-lg); padding: 15px; margin-bottom: 20px;">
+                <h2 class="section-title" style="color: var(--status-green); font-size: 1.1rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🟢 Duel Sedang Berlangsung</span>
+                    <span id="live-connection-status" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; background: rgba(22, 163, 74, 0.15); color: var(--status-green);">Normal</span>
+                </h2>
+
+                <div class="scoreboard" style="display: flex; justify-content: space-around; align-items: center; margin: 15px 0; background: rgba(0,0,0,0.2); padding: 15px; border-radius: var(--radius-md);">
+                    <div style="text-align: center;">
+                        <h4 id="dash-p1-name" style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: #ffb703; margin-bottom: 4px;">P1</h4>
+                        <span id="dash-p1-score" style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: #ffb703;">0</span>
+                    </div>
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: bold; color: var(--text-secondary);">VS</div>
+                    <div style="text-align: center;">
+                        <h4 id="dash-p2-name" style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: #219ebc; margin-bottom: 4px;">P2</h4>
+                        <span id="dash-p2-score" style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: #219ebc;">0</span>
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top: 10px; gap: 8px;">
+                    <button type="button" id="btn-dash-reset" class="btn" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--status-red); flex: 1;">
+                        🔄 Reset Skor
+                    </button>
+                    <button type="button" id="btn-dash-stop" class="btn" style="background: rgba(239, 68, 68, 0.8); color: #fff; flex: 1;">
+                        ⏹ Hentikan Pertandingan
+                    </button>
+                </div>
+
+                <!-- Live Music controller popover trigger -->
+                <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 10px;">
+                    <label style="font-weight: bold; color: var(--accent-purple); display: block; margin-bottom: 8px;">🎵 Kontrol Musik Layar Battle (Remote)</label>
+                    <div style="display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
+                        <div class="popover-actions" style="display:flex; gap: 4px;">
+                            <button type="button" id="btn-dash-play-bgm" class="btn btn-control" style="font-size:0.75rem;">▶ Play</button>
+                            <button type="button" id="btn-dash-pause-bgm" class="btn btn-control" style="font-size:0.75rem;">⏸ Pause</button>
+                            <button type="button" id="btn-dash-stop-bgm" class="btn btn-control" style="font-size:0.75rem;">⏹ Stop</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 150px;">
+                            <span>🔊</span>
+                            <input type="range" id="dash-volume-bgm" min="0" max="1" step="0.05" value="0.5" style="flex:1;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Configuration -->
+            <div class="form-section">
+                <h2 class="section-title">🔑 Konfigurasi API (Multi-Key)</h2>
+                
+                <div class="form-group">
+                    <label for="api-keys-input">YouTube Data API Keys</label>
+                    <div class="api-keys-container">
+                        <div id="api-keys-list" class="api-keys-list">
+                            <!-- Dynamic key items will be inserted here -->
+                        </div>
+                        <div class="api-key-add-row">
+                            <input type="password" id="api-key-new" placeholder="Paste API Key baru di sini..." autocomplete="off">
+                            <button type="button" id="btn-add-key" class="btn btn-add-key">+ Tambah</button>
+                        </div>
+                    </div>
+                    <span class="form-hint">Masukkan beberapa API Key untuk rotasi otomatis saat kuota habis. <br>Dapatkan di <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></span>
+                    <div class="api-key-stats">
+                        <span>📊 Total Keys: <strong id="total-keys-count">0</strong></span>
+                        <span>|</span>
+                        <span>🟢 Aktif: <strong id="active-key-index">-</strong></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="video-url">YouTube Live Video URL / ID</label>
+                    <input type="text" id="video-url" placeholder="https://youtube.com/watch?v=... atau Video ID">
+                    <span class="form-hint">Masukkan URL atau ID video YouTube yang sedang LIVE</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="history-mode">Metode Pembacaan Komentar Awal</label>
+                    <select id="history-mode">
+                        <option value="history-new" selected>Mulai Dari Sekarang (Abaikan chat sebelumnya)</option>
+                        <option value="history-all">Proses Chat Sebelumnya (Hitung dari awal live stream)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="fuzzy-threshold">Ambang Batas Kemiripan Kata Kunci (Fuzzy Match)</label>
+                    <select id="fuzzy-threshold">
+                        <option value="0.5">50% Mirip</option>
+                        <option value="0.6">60% Mirip</option>
+                        <option value="0.7">70% Mirip</option>
+                        <option value="0.8" selected>80% Mirip (Rekomendasi)</option>
+                        <option value="0.9">90% Mirip</option>
+                        <option value="1.0">100% Sama Persis</option>
+                    </select>
+                    <span class="form-hint">Semakin rendah persentasenya, semakin banyak variasi salah ketik yang ditoleransi.</span>
+                </div>
+            </div>
+
+            <!-- Battle Configuration -->
+            <div class="form-section">
+                <h2 class="section-title">⚔️ Konfigurasi Battle</h2>
+
+                <div class="form-group">
+                    <label for="battle-title">Judul Duel</label>
+                    <input type="text" id="battle-title" placeholder="contoh: ⚽ PERTARUNGAN KOMENTAR TERBESAR!" value="⚽ PERTARUNGAN KOMENTAR TERBESAR!">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="player1-name">Kata Kunci Player 1 (Koma-separated)</label>
+                        <input type="text" id="player1-name" placeholder="contoh: RONALDO, Portugal, cr7" value="RONALDO, Portugal, cr7">
+                    </div>
+                    <div class="form-group">
+                        <label for="player2-name">Kata Kunci Player 2 (Koma-separated)</label>
+                        <input type="text" id="player2-name" placeholder="contoh: MESSI, Argentina, lm10" value="MESSI, Argentina, lm10">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="player1-weight">Nilai Poin per Match (Player 1)</label>
+                        <input type="number" id="player1-weight" min="1" max="100" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="player2-weight">Nilai Poin per Match (Player 2)</label>
+                        <input type="number" id="player2-weight" min="1" max="100" value="1">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="player1-initial-score">🏁 Skor Awal Player 1</label>
+                        <input type="number" id="player1-initial-score" min="0" max="100000" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="player2-initial-score">🏁 Skor Awal Player 2</label>
+                        <input type="number" id="player2-initial-score" min="0" max="100000" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Foto Player 1</label>
+                        <div class="upload-area" id="upload-area-1">
+                            <img id="player1-preview" class="preview-img hidden" src="" alt="Player 1">
+                            <div class="upload-placeholder" id="upload-placeholder-1">
+                                <span class="upload-icon">📷</span>
+                                <span>Klik untuk upload foto</span>
+                            </div>
+                            <input type="file" id="player1-upload" accept="image/*" class="file-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Foto Player 2</label>
+                        <div class="upload-area" id="upload-area-2">
+                            <img id="player2-preview" class="preview-img hidden" src="" alt="Player 2">
+                            <div class="upload-placeholder" id="upload-placeholder-2">
+                                <span class="upload-icon">📷</span>
+                                <span>Klik untuk upload foto</span>
+                            </div>
+                            <input type="file" id="player2-upload" accept="image/*" class="file-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="photo-shape">Bentuk Foto Player</label>
+                        <select id="photo-shape">
+                            <option value="bulat" selected>Bulat (Circle)</option>
+                            <option value="kotak">Kotak (Rounded Square)</option>
+                            <option value="olive">Olive (Organic Leaf Shape)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="photo-size">Ukuran Foto Player</label>
+                        <select id="photo-size">
+                            <option value="100">100px</option>
+                            <option value="120">120px</option>
+                            <option value="150" selected>150px (Default)</option>
+                            <option value="180">180px</option>
+                            <option value="200">200px</option>
+                        </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="card-width">Lebar Kartu Player</label>
+                        <select id="card-width">
+                            <option value="180">Sangat Kecil (180px)</option>
+                            <option value="220">Kecil (220px)</option>
+                            <option value="260" selected>Sedang (260px - Default)</option>
+                            <option value="300">Besar (300px)</option>
+                            <option value="340">Sangat Besar (340px)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="player-name-size">Ukuran Nama Player</label>
+                        <select id="player-name-size">
+                            <option value="1">Kecil</option>
+                            <option value="1.25">Sedang</option>
+                            <option value="1.5" selected>Besar (Default)</option>
+                            <option value="1.8">Sangat Besar</option>
+                            <option value="2.2">Raksasa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="player-score-size">Ukuran Poin Player</label>
+                        <select id="player-score-size">
+                            <option value="3">Kecil</option>
+                            <option value="4.2">Sedang</option>
+                            <option value="5" selected>Besar (Default)</option>
+                            <option value="6">Sangat Besar</option>
+                            <option value="7.5">Raksasa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="player1-action">📢 Tombol Aksi Player 1</label>
+                        <select id="player1-action">
+                            <option value="none" selected>Tidak Ada (None)</option>
+                            <option value="like">👍 LIKE</option>
+                            <option value="subscribe">🔔 SUBSCRIBE</option>
+                            <option value="comment">💬 COMMENT</option>
+                            <option value="share">🔄 SHARE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="player2-action">📢 Tombol Aksi Player 2</label>
+                        <select id="player2-action">
+                            <option value="none" selected>Tidak Ada (None)</option>
+                            <option value="like">👍 LIKE</option>
+                            <option value="subscribe">🔔 SUBSCRIBE</option>
+                            <option value="comment">💬 COMMENT</option>
+                            <option value="share">🔄 SHARE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="player1-action-points">⚡ Nilai Poin Aksi Player 1</label>
+                        <input type="number" id="player1-action-points" min="0" max="1000" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="player2-action-points">⚡ Nilai Poin Aksi Player 2</label>
+                        <input type="number" id="player2-action-points" min="0" max="1000" value="5">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" id="show-action-points" checked> Tampilkan Nilai Poin di Layar (+2, +5, dst.)
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="trigger-text-input">Kalimat Pemantik</label>
+                    <textarea id="trigger-text-input" rows="2" placeholder="contoh: 🔥 Ketik RONALDO atau MESSI di komentar live! 🔥">🔥 Ketik RONALDO atau MESSI di komentar live! 🔥</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="trigger-font-size">Ukuran Font Pemantik</label>
+                        <select id="trigger-font-size">
+                            <option value="20">Kecil (20px)</option>
+                            <option value="24">Sedang (24px)</option>
+                            <option value="28" selected>Besar (28px)</option>
+                            <option value="32">Sangat Besar (32px)</option>
+                            <option value="36">Raksasa (36px)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="trigger-animation">Animasi Pemantik</label>
+                        <select id="trigger-animation">
+                            <option value="static">Static (Tidak Ada)</option>
+                            <option value="blink">Berkedip</option>
+                            <option value="rainbow" selected>Pelangi</option>
+                            <option value="neon">Neon Glow</option>
+                            <option value="shimmer">Shimmer</option>
+                            <option value="bounce">Melayang</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cta-text-input">Text Ajakan Bawah (CTA)</label>
+                    <input type="text" id="cta-text-input" placeholder="contoh: 🔔 Jangan lupa LIKE, COMMENT, dan SUBSCRIBE! 🔔" value="🔔 Jangan lupa LIKE, COMMENT, dan SUBSCRIBE! 🔔">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cta-font-size">Ukuran Font Ajakan</label>
+                        <select id="cta-font-size">
+                            <option value="16">Kecil (16px)</option>
+                            <option value="20" selected>Sedang (20px)</option>
+                            <option value="24">Besar (24px)</option>
+                            <option value="28">Sangat Besar (28px)</option>
+                            <option value="32">Raksasa (32px)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cta-animation">Animasi Ajakan</label>
+                        <select id="cta-animation">
+                            <option value="static">Static</option>
+                            <option value="blink" selected>Berkedip</option>
+                            <option value="rainbow">Pelangi</option>
+                            <option value="neon">Neon Glow</option>
+                            <option value="shimmer">Shimmer</option>
+                            <option value="bounce">Melayang</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="celebration-effect">Efek Perayaan Poin</label>
+                    <select id="celebration-effect">
+                        <option value="stars" selected>✨ Bintang Bertebaran</option>
+                        <option value="fireworks">🎆 Kembang Api</option>
+                        <option value="popper">🎉 Surprise Party Popper</option>
+                        <option value="random">🔀 Acak (Random)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Layout Scaling Configuration -->
+            <div class="form-section">
+                <h2 class="section-title">📐 Pengaturan Skala Tampilan Elemen</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="scale-title">Ukuran Judul Battle</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="scale-title" min="0" max="100" step="5" value="50" style="flex: 1; cursor: pointer;">
+                            <span id="val-scale-title" style="font-size: 0.85rem; color: var(--text-primary); font-weight: bold; min-width: 40px; text-align: right;">50%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="scale-player-card">Ukuran Card & Nama Player</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="scale-player-card" min="0" max="100" step="5" value="50" style="flex: 1; cursor: pointer;">
+                            <span id="val-scale-player-card" style="font-size: 0.85rem; color: var(--text-primary); font-weight: bold; min-width: 40px; text-align: right;">50%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="scale-trigger">Ukuran Kata Pemantik</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="scale-trigger" min="0" max="100" step="5" value="50" style="flex: 1; cursor: pointer;">
+                            <span id="val-scale-trigger" style="font-size: 0.85rem; color: var(--text-primary); font-weight: bold; min-width: 40px; text-align: right;">50%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="scale-feed">Ukuran Kotak Komentar</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="scale-feed" min="0" max="100" step="5" value="50" style="flex: 1; cursor: pointer;">
+                            <span id="val-scale-feed" style="font-size: 0.85rem; color: var(--text-primary); font-weight: bold; min-width: 40px; text-align: right;">50%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="scale-cta">Ukuran Text Ajakan (CTA)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="scale-cta" min="0" max="100" step="5" value="50" style="flex: 1; cursor: pointer;">
+                            <span id="val-scale-cta" style="font-size: 0.85rem; color: var(--text-primary); font-weight: bold; min-width: 40px; text-align: right;">50%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-height">Tinggi Kotak Komentar</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="feed-height" min="150" max="800" step="10" value="350" style="flex: 1; cursor: pointer;">
+                            <span id="val-feed-height" style="font-size: 0.85rem; color: var(--text-primary); font-weight: bold; min-width: 40px; text-align: right;">350px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Background Colors Configuration -->
+            <div class="form-section">
+                <h2 class="section-title">🎨 Pengaturan Warna Latar Belakang</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="color-player1-card">BG Kartu Player 1</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-player1-card" value="#11052c">
+                            <span class="color-val" id="val-color-player1-card">#11052C</span>
+                        </div>
+                        <div class="opacity-slider-row" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap;">Solid (Opacity):</span>
+                            <input type="range" id="opacity-player1-card" min="0" max="1" step="0.05" value="0.4" style="flex: 1; height: 4px; cursor: pointer;">
+                            <span id="val-opacity-player1-card" style="font-size: 0.72rem; color: var(--text-secondary); min-width: 32px; text-align: right;">40%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="color-player2-card">BG Kartu Player 2</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-player2-card" value="#11052c">
+                            <span class="color-val" id="val-color-player2-card">#11052C</span>
+                        </div>
+                        <div class="opacity-slider-row" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap;">Solid (Opacity):</span>
+                            <input type="range" id="opacity-player2-card" min="0" max="1" step="0.05" value="0.4" style="flex: 1; height: 4px; cursor: pointer;">
+                            <span id="val-opacity-player2-card" style="font-size: 0.72rem; color: var(--text-secondary); min-width: 32px; text-align: right;">40%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="color-trigger">Background Pemantik</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-trigger" value="#11052c">
+                            <span class="color-val" id="val-color-trigger">#11052C</span>
+                        </div>
+                        <div class="opacity-slider-row" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap;">Solid (Opacity):</span>
+                            <input type="range" id="opacity-trigger" min="0" max="1" step="0.05" value="0.35" style="flex: 1; height: 4px; cursor: pointer;">
+                            <span id="val-opacity-trigger" style="font-size: 0.72rem; color: var(--text-secondary); min-width: 32px; text-align: right;">35%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="color-feed">Background Live Chat</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-feed" value="#11052c">
+                            <span class="color-val" id="val-color-feed">#11052C</span>
+                        </div>
+                        <div class="opacity-slider-row" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap;">Solid (Opacity):</span>
+                            <input type="range" id="opacity-feed" min="0" max="1" step="0.05" value="0.35" style="flex: 1; height: 4px; cursor: pointer;">
+                            <span id="val-opacity-feed" style="font-size: 0.72rem; color: var(--text-secondary); min-width: 32px; text-align: right;">35%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="color-cta">Background Ajakan Bawah</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-cta" value="#a855f7">
+                            <span class="color-val" id="val-color-cta">#A855F7</span>
+                        </div>
+                        <div class="opacity-slider-row" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <span style="font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap;">Solid (Opacity):</span>
+                            <input type="range" id="opacity-cta" min="0" max="1" step="0.05" value="0.15" style="flex: 1; height: 4px; cursor: pointer;">
+                            <span id="val-opacity-cta" style="font-size: 0.72rem; color: var(--text-secondary); min-width: 32px; text-align: right;">15%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <!-- Empty Grid Spacer -->
+                    </div>
+                </div>
+
+                <!-- Text Colors -->
+                <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                    <label style="font-weight: bold; color: var(--accent-purple);">✍️ Pengaturan Warna Teks Player</label>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="color-player1-text">Warna Teks Player 1</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-player1-text" value="#ffb703">
+                            <span class="color-val" id="val-color-player1-text">#FFB703</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="color-player2-text">Warna Teks Player 2</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-player2-text" value="#219ebc">
+                            <span class="color-val" id="val-color-player2-text">#219EBC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Badges Colors -->
+                <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                    <label style="font-weight: bold; color: var(--accent-purple);">🛡️ Pengaturan Warna Badge Aksi (LIKE, SUBSCRIBE, SHARE, COMMENT)</label>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="color-p1-badge">Warna BG Badge Aksi P1</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-p1-badge" value="#ef4444">
+                            <span class="color-val" id="val-color-p1-badge">#EF4444</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="color-p1-badge-text">Warna Teks Badge Aksi P1</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-p1-badge-text" value="#ffffff">
+                            <span class="color-val" id="val-color-p1-badge-text">#FFFFFF</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="color-p2-badge">Warna BG Badge Aksi P2</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-p2-badge" value="#3b82f6">
+                            <span class="color-val" id="val-color-p2-badge">#3B82F6</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="color-p2-badge-text">Warna Teks Badge Aksi P2</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-p2-badge-text" value="#ffffff">
+                            <span class="color-val" id="val-color-p2-badge-text">#FFFFFF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Background Music Configuration (Playlist) -->
+            <div class="form-section">
+                <h2 class="section-title">🎵 Musik Latar Belakang (BGM Playlist)</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bgm-file">➕ Upload File Audio Lokal (MP3)</label>
+                        <input type="file" id="bgm-file" accept="audio/*" multiple>
+                        <span class="form-hint">Anda bisa memilih beberapa file sekaligus</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="bgm-url">🔗 URL Musik Online (.mp3)</label>
+                        <div style="display:flex; gap: 8px;">
+                            <input type="text" id="bgm-url" placeholder="https://domain.com/musik.mp3" style="flex:1;">
+                            <button type="button" id="btn-add-bgm-url" class="btn btn-control" style="padding:0 12px; margin:0; font-size: 0.8rem;">+ Tambah</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BGM Playlist List -->
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>📋 Daftar Playlist Musik</label>
+                    <div id="bgm-playlist-container" class="api-keys-list" style="max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 8px; border-radius: var(--radius-md);">
+                        <!-- Dynamic track items -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fitur Pemantik Komentar (Simulasi) -->
+            <div class="form-section" style="background: rgba(16, 185, 129, 0.03); border: 1px dashed rgba(16, 185, 129, 0.2); border-radius: var(--radius-lg); padding: 15px; margin-bottom: 20px;">
+                <h2 class="section-title" style="color: #10b981; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    ⚡ Fitur Pemantik Komentar (Simulasi)
+                </h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mock-p1-count">Jumlah Komentar Player 1</label>
+                        <input type="number" id="mock-p1-count" min="0" max="50" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="mock-p2-count">Jumlah Komentar Player 2</label>
+                        <input type="number" id="mock-p2-count" min="0" max="50" value="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="mock-emoji-opt">Sertakan Emoji?</label>
+                        <select id="mock-emoji-opt">
+                            <option value="yes" selected>Ya (Sertakan Emoji Random)</option>
+                            <option value="no">Tidak (Tanpa Emoji)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" id="btn-send-mock" class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; margin-top: 10px; width: 100%; font-weight: bold; font-family: 'Outfit', sans-serif;">
+                    🚀 Kirim Komentar Simulasi ke Layar OBS
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button id="btn-save" class="btn btn-secondary" type="button">
+                    💾 Simpan Konfigurasi
+                </button>
+                <button id="btn-start" class="btn btn-primary" type="button">
+                    🚀 Mulai & Terapkan Battle!
+                </button>
+            </div>
+
+            <div class="admin-footer">
+                <p>Klik "Mulai & Terapkan" untuk mengirimkan setelan dan memulai duel di OBS Screen.</p>
+                <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:8px;">Buka <a href="index.html" target="_blank" style="color:var(--accent-purple); text-decoration:underline; font-weight:bold;">index.html (Layar Utama Battle)</a> di browser/OBS Anda untuk menampilkan visual pertandingan.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Admin logic -->
+    <script src="admin.js"></script>
+</body>
+</html>
