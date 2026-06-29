@@ -1208,12 +1208,19 @@
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room') || urlParams.get('session');
     if (roomParam) {
-      config.syncMode = 'firebase';
-      config.fbSessionId = roomParam.trim();
+      let currentConfig = {};
+      try {
+        const raw = localStorage.getItem(CONFIG_KEY);
+        if (raw) currentConfig = JSON.parse(raw);
+      } catch (e) {}
+
+      currentConfig.syncMode = 'firebase';
+      currentConfig.fbSessionId = roomParam.trim();
+
       dom.syncMode.value = 'firebase';
       dom.fbSessionId.value = roomParam.trim();
       try {
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(currentConfig));
       } catch (err) {}
     }
 
