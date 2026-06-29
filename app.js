@@ -1096,37 +1096,49 @@
 
   function enrichKeywords(keywords) {
     const enriched = [...keywords];
-    const dict = {
-      ronaldo: ['cr7', 'رونالدو', 'Роналду', 'ロナウド', 'C罗', '罗纳尔多', 'रोनाल्डो', 'Ρονάλντο', 'siu', 'siuu', 'siuuu', 'cristiano'],
-      messi: ['leo', 'ميسي', 'Месси', 'メッシ', '梅西', 'मेस्सी', 'Μέσι', 'ankara', 'lionel']
-    };
-    
-    let hasRonaldo = false;
-    let hasMessi = false;
+    const themes = [
+      {
+        keys: ['ronaldo', 'cr7', 'cristiano'],
+        translations: ['ronaldo', 'cr7', 'رونالدو', 'Роналду', 'ロナウド', 'C罗', '罗纳尔多', 'रोनाल्डो', 'Ρονάλντο', 'siu', 'siuu', 'siuuu', 'cristiano']
+      },
+      {
+        keys: ['messi', 'leo', 'lionel'],
+        translations: ['messi', 'leo', 'ميسي', 'Месси', 'メッシ', '梅西', 'मेस्सी', 'Μέσι', 'ankara', 'lionel']
+      },
+      {
+        keys: ['surga', 'heaven', 'jannah'],
+        translations: ['surga', 'heaven', 'jannah', 'الجنة', 'جنة', 'Рай', '天国', 'てんごく', 'paradise', 'celestial', 'cielo']
+      },
+      {
+        keys: ['neraka', 'hell', 'jahannam'],
+        translations: ['neraka', 'hell', 'jahannam', 'جهنم', 'النار', 'Ад', '地獄', 'じごく', 'underworld', 'infierno', 'fuego']
+      },
+      {
+        keys: ['kucing', 'cat', 'neko'],
+        translations: ['kucing', 'cat', 'neko', 'cats', 'gato', 'قط', 'кошка', 'кот', '猫', 'ねこ']
+      },
+      {
+        keys: ['anjing', 'dog', 'inu'],
+        translations: ['anjing', 'dog', 'inu', 'dogs', 'perro', 'كلب', 'собака', 'пес', '犬', 'いぬ']
+      }
+    ];
+
     keywords.forEach(k => {
-      const val = k.toLowerCase();
-      if (val.includes('ronaldo') || val.includes('cr7') || val.includes('cristiano')) {
-        hasRonaldo = true;
-      }
-      if (val.includes('messi') || val.includes('leo') || val.includes('lionel')) {
-        hasMessi = true;
-      }
+      const val = k.toLowerCase().trim();
+      if (!val) return;
+      
+      themes.forEach(theme => {
+        const isMatch = theme.keys.some(tk => val.includes(tk) || tk.includes(val));
+        if (isMatch) {
+          theme.translations.forEach(trans => {
+            if (!enriched.some(x => x.toLowerCase().trim() === trans.toLowerCase().trim())) {
+              enriched.push(trans);
+            }
+          });
+        }
+      });
     });
 
-    if (hasRonaldo) {
-      dict.ronaldo.forEach(item => {
-        if (!enriched.some(x => x.toLowerCase() === item.toLowerCase())) {
-          enriched.push(item);
-        }
-      });
-    }
-    if (hasMessi) {
-      dict.messi.forEach(item => {
-        if (!enriched.some(x => x.toLowerCase() === item.toLowerCase())) {
-          enriched.push(item);
-        }
-      });
-    }
     return enriched;
   }
 
@@ -1701,6 +1713,18 @@
     cacheDom();
     await initMusic();
     loadConfig();
+
+    // Check for room/session parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room') || urlParams.get('session');
+    if (roomParam) {
+      config.syncMode = 'firebase';
+      config.fbSessionId = roomParam.trim();
+      try {
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+      } catch (err) {}
+    }
+
     applyConfigToUi();
     restoreScoresState();
     bindEvents();

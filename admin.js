@@ -913,6 +913,42 @@
 
   const MOCK_EMOJIS = ['🔥', '⚽', '🏆', '👑', '🐐', '💪', '👏', '⚡', '✨', '🤩', '🎯', '💯'];
 
+  const WORD_TRANSLATIONS = {
+    ronaldo: {
+      id: 'Ronaldo', en: 'Ronaldo', ar: 'رونالدو', ru: 'Роналду', ja: 'ロナウド', es: 'Ronaldo'
+    },
+    messi: {
+      id: 'Messi', en: 'Messi', ar: 'ميسي', ru: 'Месси', ja: 'メッシ', es: 'Messi'
+    },
+    surga: {
+      id: 'Surga', en: 'Heaven', ar: 'الجنة', ru: 'Рай', ja: '天国', es: 'Paraíso'
+    },
+    neraka: {
+      id: 'Neraka', en: 'Hell', ar: 'الجحيم', ru: 'Ад', ja: '地獄', es: 'Infierno'
+    },
+    kucing: {
+      id: 'Kucing', en: 'Cat', ar: 'القط', ru: 'Кот', ja: '猫', es: 'Gato'
+    },
+    anjing: {
+      id: 'Anjing', en: 'Dog', ar: 'الكلب', ru: 'Собака', ja: '犬', es: 'Perro'
+    }
+  };
+
+  function getTranslations(word, defaultWord) {
+    const w = word.toLowerCase();
+    let match = null;
+    for (const k in WORD_TRANSLATIONS) {
+      if (w.includes(k) || k.includes(w)) {
+        match = WORD_TRANSLATIONS[k];
+        break;
+      }
+    }
+    if (match) return match;
+    return {
+      id: defaultWord, en: defaultWord, ar: defaultWord, ru: defaultWord, ja: defaultWord, es: defaultWord
+    };
+  }
+
   function generateMockComments() {
     const p1Count = parseInt(dom.mockP1Count.value, 10) || 0;
     const p2Count = parseInt(dom.mockP2Count.value, 10) || 0;
@@ -924,78 +960,71 @@
     const p1Word = p1Names[0] || 'RONALDO';
     const p2Word = p2Names[0] || 'MESSI';
 
+    const t1 = getTranslations(p1Word, p1Word);
+    const t2 = getTranslations(p2Word, p2Word);
+
     const p1Templates = [
       // Indonesian
-      `Ayo ${p1Word}!`,
-      `${p1Word} pasti menang!`,
-      `Go ${p1Word} GO!`,
-      `${p1Word} nih bos senggol dong`,
-      `Full support untuk ${p1Word}`,
-      `${p1Word} juara kita`,
+      `Ayo ${t1.id}!`,
+      `${t1.id} pasti menang!`,
+      `Go ${t1.id} GO!`,
+      `${t1.id} nih bos senggol dong`,
+      `Full support untuk ${t1.id}`,
+      `${t1.id} juara kita`,
       // English
-      `${p1Word} is the GOAT!`,
-      `CR7 is the best ever!`,
-      `Siuuuu ${p1Word}!`,
-      `Unstoppable ${p1Word}!`,
-      `Ronaldo is the king!`,
+      `${t1.en} is the GOAT!`,
+      `${t1.en} is the best ever!`,
+      `Go ${t1.en}!`,
+      `Unstoppable ${t1.en}!`,
+      `${t1.en} is the king!`,
       // Spanish/Portuguese
-      `¡Vamos ${p1Word}!`,
-      `${p1Word} es el mejor del mundo!`,
-      `¡El bicho es el rey!`,
-      `CR7 el mejor de la historia`,
-      `¡Siuuu!`,
+      `¡Vamos ${t1.es}!`,
+      `¡${t1.es} es el mejor del mundo!`,
+      `¡El mejor de la historia ${t1.es}!`,
       // Arabic
-      `رونالدو الأفضل في التاريخ! 🐐`,
-      `عاش الدون رونالدو! 🔥`,
-      `سييييي رونالدو! ⚽`,
-      `رونالدو وبس! 💪`,
+      `${t1.ar} الأفضل في التاريخ! 🐐`,
+      `عاش ${t1.ar}! 🔥`,
+      `الأسطورة ${t1.ar}! ⚽`,
       // Russian
-      `Роналду лучший в мире!`,
-      `Вперед Криштиану!`,
-      `Роналду вперед!`,
-      `Криштиану Роналду легенда!`,
+      `${t1.ru} лучший в мире!`,
+      `Вперед ${t1.ru}!`,
+      `${t1.ru} легенда!`,
       // Japanese
-      `ロナウド最高！🔥`,
-      `行け ロナウド！⚽`,
-      `ロナウドが一番！🏆`,
-      `CR7は伝説！🇯🇵`
+      `${t1.ja}最高！🔥`,
+      `行け ${t1.ja}！⚽`,
+      `${t1.ja}が一番！🏆`
     ];
 
     const p2Templates = [
       // Indonesian
-      `Ayo ${p2Word}!`,
-      `${p2Word} pasti menang!`,
-      `Go ${p2Word} GO!`,
-      `${p2Word} nih bos senggol dong`,
-      `Full support untuk ${p2Word}`,
-      `${p2Word} juara kita`,
+      `Ayo ${t2.id}!`,
+      `${t2.id} pasti menang!`,
+      `Go ${t2.id} GO!`,
+      `${t2.id} nih bos senggol dong`,
+      `Full support untuk ${t2.id}`,
+      `${t2.id} juara kita`,
       // English
-      `${p2Word} is the GOAT!`,
-      `Messi is the king!`,
-      `Ankara Messi Ankara Messi!`,
-      `Simply the best ${p2Word}!`,
-      `Lionel Messi the legend!`,
+      `${t2.en} is the GOAT!`,
+      `${t2.en} is the best ever!`,
+      `Go ${t2.en}!`,
+      `Unstoppable ${t2.en}!`,
+      `${t2.en} is the king!`,
       // Spanish/Portuguese
-      `¡Vamos ${p2Word}!`,
-      `${p2Word} es el mejor de la historia!`,
-      `¡El rey Lionel Messi!`,
-      `Leo Messi el mejor del mundo`,
-      `¡Vamos Leo!`,
+      `¡Vamos ${t2.es}!`,
+      `¡${t2.es} es el mejor del mundo!`,
+      `¡El mejor de la historia ${t2.es}!`,
       // Arabic
-      `ميسي الأفضل في التاريخ! 🐐`,
-      `الملك ليو ميسي! 🔥`,
-      `البرغوث ميسي لا مثيل له! ⚽`,
-      `ميسي وبس! 💪`,
+      `${t2.ar} الأفضل في التاريخ! 🐐`,
+      `عاش ${t2.ar}! 🔥`,
+      `الأسطورة ${t2.ar}! ⚽`,
       // Russian
-      `Месси лучший в мире!`,
-      `Вперед Лионель!`,
-      `Месси вперед!`,
-      `Лео Месси легенда!`,
+      `${t2.ru} лучший в мире!`,
+      `Вперед ${t2.ru}!`,
+      `${t2.ru} легенда!`,
       // Japanese
-      `メッシ最高！🔥`,
-      `行け メッシ！⚽`,
-      `メッシが一番！🏆`,
-      `リオネルメッシは神！🇯🇵`
+      `${t2.ja}最高！🔥`,
+      `行け ${t2.ja}！⚽`,
+      `${t2.ja}が一番！🏆`
     ];
 
     const generated = [];
@@ -1175,6 +1204,19 @@
     await initMusic();
     loadConfig();
     
+    // Check for room/session parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room') || urlParams.get('session');
+    if (roomParam) {
+      config.syncMode = 'firebase';
+      config.fbSessionId = roomParam.trim();
+      dom.syncMode.value = 'firebase';
+      dom.fbSessionId.value = roomParam.trim();
+      try {
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+      } catch (err) {}
+    }
+
     // Enable/disable Firebase Config views initially
     if (dom.syncMode.value === 'firebase') {
       dom.firebaseConfigFields.classList.remove('hidden');
