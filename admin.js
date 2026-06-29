@@ -712,6 +712,19 @@
         dbRef = firebase.database().ref('sessions/' + sessionId);
       }
 
+      // Load room config from Firebase or initialize it
+      dbRef.child('config').once('value').then(function(snapshot) {
+        const val = snapshot.val();
+        if (val) {
+          localStorage.setItem(CONFIG_KEY, JSON.stringify(val));
+          loadConfig();
+        } else {
+          saveConfig();
+        }
+      }).catch(function(err) {
+        console.warn('Failed to fetch initial config from Firebase:', err);
+      });
+
       dom.liveDashboard.classList.remove('hidden');
       dom.liveConnectionStatus.textContent = 'Terhubung Online';
       dom.liveConnectionStatus.style.background = 'rgba(22, 163, 74, 0.15)';
